@@ -1,6 +1,8 @@
 package org.opts.sols.solver;
 
+import java.io.File;
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +24,7 @@ import org.optaplanner.examples.vehiclerouting.persistence.VehicleRoutingImporte
 public class VehicleRoutingSolverManager implements Serializable {
 
     private static final String SOLVER_CONFIG = "org/optaplanner/examples/vehiclerouting/solver/vehicleRoutingSolverConfig.xml";
-    private static final String IMPORT_DATASET = "/org/opts/sols/data/problems_usa_zekleer1527861637145-road-km-d1-n75-k55.vrp";
+    private String IMPORT_DATASET = "/org/opts/sols/data/problems_usa_zekleer1527861637145-road-km-d1-n75-k55.vrp";
 
     private SolverFactory<VehicleRoutingSolution> solverFactory;
     // After upgrading to JEE 7, replace ExecutorService by ManagedExecutorService:
@@ -52,12 +54,19 @@ public class VehicleRoutingSolverManager implements Serializable {
         executor.shutdown();
     }
 
-    public synchronized VehicleRoutingSolution retrieveOrCreateSolution(String sessionId) {
+    public synchronized VehicleRoutingSolution retrieveOrCreateSolution(String sessionId, String DSURL) {
         VehicleRoutingSolution solution = sessionSolutionMap.get(sessionId);
         if (solution == null) {
-            URL unsolvedSolutionURL = getClass().getResource(IMPORT_DATASET);
+            // URL unsolvedSolutionURL = getClass().getResource(DSURL);
+            URL unsolvedSolutionURL = null;
+			try {
+				unsolvedSolutionURL = new URL("file:///"+DSURL);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             if (unsolvedSolutionURL == null) {
-                throw new IllegalArgumentException("The IMPORT_DATASET (" + IMPORT_DATASET
+                throw new IllegalArgumentException("The IMPORT_DATASET (" + DSURL
                         + ") is not a valid classpath resource.");
             }
             solution = (VehicleRoutingSolution) new VehicleRoutingImporter()
@@ -67,7 +76,7 @@ public class VehicleRoutingSolverManager implements Serializable {
         return solution;
     }
 
-    public synchronized boolean solve(final String sessionId) {
+    public synchronized boolean solve(final String sessionId, String DSURL) {
         final Solver<VehicleRoutingSolution> solver = solverFactory.buildSolver();
         solver.addEventListener(new SolverEventListener<VehicleRoutingSolution>() {
 			@Override
@@ -82,7 +91,7 @@ public class VehicleRoutingSolverManager implements Serializable {
             return false;
         }
         sessionSolverMap.put(sessionId, solver);
-        final VehicleRoutingSolution solution = retrieveOrCreateSolution(sessionId);
+        final VehicleRoutingSolution solution = retrieveOrCreateSolution(sessionId,DSURL);
         executor.submit((Runnable) () -> {
             VehicleRoutingSolution bestSolution = solver.solve(solution);
             synchronized (VehicleRoutingSolverManager.this) {

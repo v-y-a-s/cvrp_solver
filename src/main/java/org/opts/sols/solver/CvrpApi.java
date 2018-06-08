@@ -5,6 +5,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import java.awt.Color;
+import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -31,7 +32,9 @@ import org.opts.sols.domain.JsonVehicleRoutingSolution;
 public class CvrpApi {
 	
     private static final NumberFormat NUMBER_FORMAT = new DecimalFormat("#,##0.00");
-
+    private String fileName;
+    
+    
     @Inject
     private VehicleRoutingSolverManager solverManager;
     
@@ -44,14 +47,47 @@ public class CvrpApi {
      *
      * @return String that will be returned as a text/plain response.
      */
+   
+   
+
+    @GET
+    @Path("/setsFileName")
+    @Produces("application/json")
+	public JsonMessage setsFileName() {
+    	
+    	if(request.getHeader("fileName") != null)
+    	{
+    	request.getServletContext().setAttribute("fileName",request.getHeader("fileName"));
+    	
+        return new JsonMessage("Successfully Set Name : ");
+    }
+    	else {
+    		return new JsonMessage("Mention File Name in header in the header parameter fileName");
+    	}
+    }
+   
+
+
+
 	@GET
+    @Path("/getsFileName")
+    @Produces("application/json")
+	public JsonMessage getsFileName() {
+    	
+    		return new JsonMessage("FN : " + request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName"));
+    	
+    }
+    
+    @GET
     @Path("/solution")
     @Produces("application/json")
 	public JsonVehicleRoutingSolution getSolution() {
-        VehicleRoutingSolution solution = solverManager.retrieveOrCreateSolution(request.getSession().getId());
+    	// TODO : check if solution file string is empty
+    	String DSURL = request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName");
+        VehicleRoutingSolution solution = solverManager.retrieveOrCreateSolution(request.getSession().getId(),DSURL);
         return convertToJsonVehicleRoutingSolution(solution);
     }
-	
+	   
     protected JsonVehicleRoutingSolution convertToJsonVehicleRoutingSolution(VehicleRoutingSolution solution) {
         JsonVehicleRoutingSolution jsonSolution = new JsonVehicleRoutingSolution();
         jsonSolution.setName(solution.getName());
@@ -99,7 +135,9 @@ public class CvrpApi {
     @Path("/solution/solve")
     @Produces("application/json")
     public JsonMessage solve() {
-        boolean success = solverManager.solve(request.getSession().getId());
+    	// TODO : check if solution file string is empty
+    	String DSURL = request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName");
+        boolean success = solverManager.solve(request.getSession().getId(),DSURL);
         return new JsonMessage(success ? "Solving started." : "Solver was already running.");
     }
 
