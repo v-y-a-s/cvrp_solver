@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 
 /**
  * This servlet demonstrates how to receive file uploaded from the client
@@ -71,7 +72,10 @@ public class UploadDownloadFileServlet extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-
+		
+		File dir = new File(request.getServletContext().getAttribute("FILES_DIR") + File.separator);
+		//new File(request.getServletContext().getAttribute("FILES_DIR")+).getParentFile().getName();
+		FileUtils.cleanDirectory(dir); 
 		// Gets file name for HTTP header
 		String fileName = request.getHeader("fileName");
 		File saveFile = new File(request.getServletContext().getAttribute("FILES_DIR") + File.separator + fileName);

@@ -55,10 +55,10 @@ public class CvrpApi {
     @Produces("application/json")
 	public JsonMessage setsFileName() {
     	
+    	request.getSession().invalidate();
     	if(request.getHeader("fileName") != null)
     	{
     	request.getServletContext().setAttribute("fileName",request.getHeader("fileName"));
-    	
         return new JsonMessage("Successfully Set Name : ");
     }
     	else {
@@ -77,14 +77,14 @@ public class CvrpApi {
     		return new JsonMessage("FN : " + request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName"));
     	
     }
-    
+    	
     @GET
     @Path("/solution")
     @Produces("application/json")
 	public JsonVehicleRoutingSolution getSolution() {
     	// TODO : check if solution file string is empty
     	String DSURL = request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName");
-        VehicleRoutingSolution solution = solverManager.retrieveOrCreateSolution(request.getSession().getId(),DSURL);
+    	VehicleRoutingSolution solution = solverManager.retrieveOrCreateSolution((String) request.getServletContext().getAttribute("fileName"),request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName"));
         return convertToJsonVehicleRoutingSolution(solution);
     }
 	   
@@ -137,7 +137,7 @@ public class CvrpApi {
     public JsonMessage solve() {
     	// TODO : check if solution file string is empty
     	String DSURL = request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName");
-        boolean success = solverManager.solve(request.getSession().getId(),DSURL);
+        boolean success = solverManager.solve((String) request.getServletContext().getAttribute("fileName"),request.getServletContext().getAttribute("FILES_DIR") + File.separator + request.getServletContext().getAttribute("fileName"));
         return new JsonMessage(success ? "Solving started." : "Solver was already running.");
     }
 
